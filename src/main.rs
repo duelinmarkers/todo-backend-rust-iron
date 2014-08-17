@@ -12,7 +12,7 @@ fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
     let _ = res.headers.insert_raw("access-control-allow-origin".to_string(), b"*");
     if req.method == Options {
         let _ = res.headers.insert_raw("access-control-allow-headers".to_string(), b"accept, content-type");
-        let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,HEAD,POST,DELETE,OPTIONS,PUT,PATCH");
+        let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,HEAD,POST,DELETE,OPTIONS");
     }
     Continue
 }
