@@ -39,6 +39,7 @@ fn main() {
     router.options("/", FromFn::new(empty_success));
     router.get("/", FromFn::new(empty_success));
     router.post("/", FromFn::new(echo_todo));
+    router.delete("/", FromFn::new(empty_success));
 
     let mut server: Server = Iron::new();
     server.chain.link(logger::Logger::new(None));
