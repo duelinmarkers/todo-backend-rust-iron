@@ -96,9 +96,17 @@ fn create_todo(req: &mut Request, res: &mut Response) -> Status {
             }
         }
         Err(s) => {
+            // TODO respond 4xx
             println!("{}", s)
         }
     }
+    Unwind
+}
+
+fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
+    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+    todos.clear();
+    let _ = res.serve(::http::status::Ok, "".to_string());
     Unwind
 }
 
@@ -115,7 +123,7 @@ fn main() {
     router.options("/", FromFn::new(empty_success));
     router.get("/", FromFn::new(list_todos));
     router.post("/", FromFn::new(create_todo));
-    router.delete("/", FromFn::new(empty_success));
+    router.delete("/", FromFn::new(delete_todos));
 
     server.chain.link(router);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
