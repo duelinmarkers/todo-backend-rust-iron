@@ -18,7 +18,8 @@ use serialize::json;
 #[deriving(Show, Clone, Encodable)]
 struct Todo {
     title: String,
-    order: Option<f64>
+    order: Option<f64>,
+    completed: bool
 }
 
 struct TodoList; // "Phantom" type for iron/persistent.
@@ -63,7 +64,8 @@ fn fresh_todo(s: &str) -> Result<Todo, String> {
                                    order: match json.find(&"order".to_string()) {
                                        Some(j) => j.as_f64(),
                                        None => None
-                                   }
+                                   },
+                                   completed: false
                                }),
                 _ => { println!("bad or missing title!"); Err("bad or missing title!".to_string()) }
             }
