@@ -1,0 +1,2 @@
+rustc --version
+cargo version
