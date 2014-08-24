@@ -108,7 +108,7 @@ fn create_todo(req: &mut Request, res: &mut Response) -> Status {
 fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
     let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
     todos.clear();
-    let _ = res.serve(::http::status::Ok, "".to_string());
+    let _ = res.serve(::http::status::Ok, "");
     Unwind
 }
 
