@@ -1,4 +1,5 @@
 extern crate http;
+extern crate uuid;
 extern crate iron;
 extern crate logger;
 extern crate router;
@@ -14,12 +15,15 @@ use persistent::Persistent;
 use typemap::Assoc;
 use std::sync::{Arc, RWLock};
 use serialize::json;
+use uuid::Uuid;
 
 #[deriving(Show, Clone, Encodable)]
 struct Todo {
     title: String,
     order: Option<f64>,
-    completed: bool
+    completed: bool,
+    id: Uuid,
+    url: String // url::Url is not encodable
 }
 
 struct TodoList; // "Phantom" type for iron/persistent.
@@ -59,14 +63,19 @@ fn fresh_todo(s: &str) -> Result<Todo, String> {
     match json::from_str(s) {
         Ok(json) => {
             match json.find(&"title".to_string()) {
-                Some(title) => Ok(Todo {
-                                   title: title.as_string().unwrap().to_string(),
-                                   order: match json.find(&"order".to_string()) {
-                                       Some(j) => j.as_f64(),
-                                       None => None
-                                   },
-                                   completed: false
-                               }),
+                Some(title) => {
+                    let id = Uuid::new_v4();
+                    Ok(Todo {
+                        title: title.as_string().unwrap().to_string(),
+                        order: match json.find(&"order".to_string()) {
+                            Some(j) => j.as_f64(),
+                            None => None
+                        },
+                        completed: false,
+                        id: id,
+                        url: format!("http://localhost:3000/{}", id)
+                    })
+                },
                 _ => { println!("bad or missing title!"); Err("bad or missing title!".to_string()) }
             }
         },

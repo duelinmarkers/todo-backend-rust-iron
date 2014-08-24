@@ -24,6 +24,12 @@ rev = "work-with-typemap-req-extensions"
 git = "https://github.com/duelinmarkers/persistent.git"
 rev = "work-with-typemap"
 
+# [dependencies.url]
+# git = "https://github.com/servo/rust-url.git"
+
+[dependencies.uuid]
+git = "https://github.com/rust-lang/uuid.git"
+
 # [dependencies.staticfile]
 # git = "https://github.com/iron/static-file.git"
 

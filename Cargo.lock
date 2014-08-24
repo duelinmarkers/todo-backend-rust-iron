@@ -6,6 +6,7 @@ dependencies = [
  "logger 0.1.0 (git+https://github.com/iron/logger.git#0d01736238a76988dcdb9c64dbfa87882037efa1)",
  "persistent 0.1.0 (git+https://github.com/duelinmarkers/persistent.git?ref=work-with-typemap#f32d5d2bd2f89f9db103523c791b731b932bc458)",
  "router 0.1.0 (git+https://github.com/duelinmarkers/router.git?ref=work-with-typemap-req-extensions#9a746b072523a5af180c5ffb6ead165388f1e4dc)",
+ "uuid 0.0.1 (git+https://github.com/rust-lang/uuid.git#03033bb0b3205b02add7f9db958efb2981fc51dd)",
 ]
 
 [[package]]
@@ -108,4 +109,9 @@ source = "git+https://github.com/servo/rust-url#637a57a8347d9011e2304d51e4ecb8e3
 dependencies = [
  "encoding 0.1.0 (git+https://github.com/lifthrasiir/rust-encoding#a55053869726dc7b67560e5f25d18105ac316001)",
 ]
+
+[[package]]
+name = "uuid"
+version = "0.0.1"
+source = "git+https://github.com/rust-lang/uuid.git#03033bb0b3205b02add7f9db958efb2981fc51dd"
 
