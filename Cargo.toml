@@ -14,13 +14,15 @@ git = "https://github.com/iron/iron.git"
 git = "https://github.com/iron/logger.git"
 
 [dependencies.router]
-git = "https://github.com/iron/router.git"
+git = "https://github.com/duelinmarkers/router.git"
+rev = "work-with-typemap-req-extensions"
 
 # [dependencies.mount]
 # git = "https://github.com/iron/mount.git"
 
-# [dependencies.persistent]
-# git = "https://github.com/iron/persistent.git"
+[dependencies.persistent]
+git = "https://github.com/duelinmarkers/persistent.git"
+rev = "work-with-typemap"
 
 # [dependencies.staticfile]
 # git = "https://github.com/iron/static-file.git"
