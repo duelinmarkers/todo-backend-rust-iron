@@ -159,6 +159,14 @@ fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
     Unwind
 }
 
+fn delete_todo(req: &mut Request, res: &mut Response) -> Status {
+    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+    todos.retain(|todo| todo.id != todoid);
+    let _ = res.serve(::http::status::Ok, "");
+    Unwind
+}
+
 fn main() {
     let mut server: Server = Iron::new();
 
@@ -176,6 +184,7 @@ fn main() {
     router.options("/:todoid", FromFn::new(empty_success));
     router.get("/:todoid", FromFn::new(get_todo));
     router.patch("/:todoid", FromFn::new(update_todo));
+    router.delete("/:todoid", FromFn::new(delete_todo));
 
     server.chain.link(router);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
