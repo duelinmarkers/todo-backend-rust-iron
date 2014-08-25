@@ -88,10 +88,10 @@ fn fresh_todo(s: &str) -> Result<Todo, String> {
                         url: format!("http://localhost:3000/{}", id)
                     })
                 },
-                _ => { println!("bad or missing title!"); Err("bad or missing title!".to_string()) }
+                _ => { Err("bad or missing title!".to_string()) }
             }
         },
-        Err(builder_error) => Err(format!("{}", builder_error))
+        Err(builder_error) => Err(format!("Failed to parse JSON: {}", builder_error))
     }
 }
 
