@@ -126,6 +126,32 @@ fn create_todo(req: &mut Request, res: &mut Response) -> Status {
     Unwind
 }
 
+fn update_todo(req: &mut Request, res: &mut Response) -> Status {
+    content_type_json(res);
+    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+    let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
+    let mut todo = todos.get_mut(idx);
+    match json::from_str(req.body.as_slice()) {
+        Ok(json) => {
+            match json.find(&"title".to_string()) {
+                Some(title) => todo.title = title.as_string().unwrap().to_string(),
+                None => {}
+            }
+            match json.find(&"completed".to_string()) {
+                Some(c) => todo.completed = c.as_boolean().unwrap(),
+                None => {}
+            }
+            let _ = res.serve(::http::status::Ok, json::encode(todo));
+        }
+        Err(builder_error) => {
+            let _ = res.serve(::http::status::BadRequest, format!("Failed to parse JSON: {}", builder_error));
+        }
+    }
+    Unwind
+
+}
+
 fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
     let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
     todos.clear();
@@ -149,6 +175,7 @@ fn main() {
     router.delete("/", FromFn::new(delete_todos));
     router.options("/:todoid", FromFn::new(empty_success));
     router.get("/:todoid", FromFn::new(get_todo));
+    router.patch("/:todoid", FromFn::new(update_todo));
 
     server.chain.link(router);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
