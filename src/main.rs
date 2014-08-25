@@ -28,7 +28,6 @@ struct Todo {
 }
 
 struct TodoList; // "Phantom" type for iron/persistent.
-
 impl Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
 
 fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
@@ -71,21 +70,38 @@ fn get_todo(req: &mut Request, res: &mut Response) -> Status {
     Unwind
 }
 
+fn validate_fresh_todo_json(json : &json::Json) -> Result<(), String> {
+    match json.find(&"title".to_string()) {
+        Some(title) => if !title.is_string() {
+            return Err("title must be a string".to_string())
+        },
+        None => return Err("title is required".to_string())
+    }
+    match json.find(&"order".to_string()) {
+        Some(order) => if order.is_number() {
+            Ok(())
+        } else {
+            Err("order must be a number".to_string())
+        },
+        None => Ok(())
+    }
+}
+
 fn fresh_todo(s: &str) -> Result<Todo, String> {
     match json::from_str(s) {
         Ok(json) => {
-            match json.find(&"title".to_string()) {
-                Some(title) => {
+            match validate_fresh_todo_json(&json) {
+                Ok(_) => {
                     let id = Uuid::new_v4();
                     Ok(Todo {
-                        title: title.as_string().unwrap().to_string(),
+                        title: json.find(&"title".to_string()).unwrap().as_string().unwrap().to_string(),
                         order: json.find(&"order".to_string()).and_then(|j| j.as_f64()),
                         completed: false,
                         id: id,
                         url: format!("http://localhost:3000/{}", id)
                     })
                 },
-                _ => { Err("bad or missing title!".to_string()) }
+                Err(msg) => { Err(msg) }
             }
         },
         Err(builder_error) => Err(format!("Failed to parse JSON: {}", builder_error))
