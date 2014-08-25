@@ -142,6 +142,10 @@ fn update_todo(req: &mut Request, res: &mut Response) -> Status {
                 Some(c) => todo.completed = c.as_boolean().unwrap(),
                 None => {}
             }
+            match json.find(&"order".to_string()) {
+                Some(o) => todo.order = o.as_f64(),
+                None => {}
+            }
             let _ = res.serve(::http::status::Ok, json::encode(todo));
         }
         Err(builder_error) => {
