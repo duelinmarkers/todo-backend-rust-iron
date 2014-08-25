@@ -79,10 +79,7 @@ fn fresh_todo(s: &str) -> Result<Todo, String> {
                     let id = Uuid::new_v4();
                     Ok(Todo {
                         title: title.as_string().unwrap().to_string(),
-                        order: match json.find(&"order".to_string()) {
-                            Some(j) => j.as_f64(),
-                            None => None
-                        },
+                        order: json.find(&"order".to_string()).and_then(|j| j.as_f64()),
                         completed: false,
                         id: id,
                         url: format!("http://localhost:3000/{}", id)
