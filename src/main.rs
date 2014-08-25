@@ -55,15 +55,15 @@ fn content_type_json(res: &mut Response) {
 
 fn list_todos(req: &mut Request, res: &mut Response) -> Status {
     content_type_json(res);
-    let todos : &Vec<Todo> = &*req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
-    let _ = res.serve(::http::status::Ok, json::encode(&todos));
+    let todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
+    let _ = res.serve(::http::status::Ok, json::encode(&*todos));
     Unwind
 }
 
 fn get_todo(req: &mut Request, res: &mut Response) -> Status {
     content_type_json(res);
     let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
-    let todos : &Vec<Todo> = &*req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
+    let todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
     match todos.iter().find(|todo| todo.id == todoid) {
         Some(todo) => { let _ = res.serve(::http::status::Ok, json::encode(todo)); },
         None => { let _ = res.serve(::http::status::NotFound, ""); }
