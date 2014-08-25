@@ -12,6 +12,7 @@ use http::method::Options;
 use http::headers::content_type::MediaType;
 use iron::{Iron, Chain, Request, Response, Server, Status, Continue, Unwind, FromFn};
 use persistent::Persistent;
+use router::{Router, Params};
 use typemap::Assoc;
 use std::sync::{Arc, RWLock};
 use serialize::json;
@@ -56,6 +57,17 @@ fn list_todos(req: &mut Request, res: &mut Response) -> Status {
     content_type_json(res);
     let todos : &Vec<Todo> = &*req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
     let _ = res.serve(::http::status::Ok, json::encode(&todos));
+    Unwind
+}
+
+fn get_todo(req: &mut Request, res: &mut Response) -> Status {
+    content_type_json(res);
+    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let todos : &Vec<Todo> = &*req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
+    match todos.iter().find(|todo| todo.id == todoid) {
+        Some(todo) => { let _ = res.serve(::http::status::Ok, json::encode(todo)); },
+        None => { let _ = res.serve(::http::status::NotFound, ""); }
+    }
     Unwind
 }
 
@@ -130,11 +142,13 @@ fn main() {
     let todolist : Persistent<Vec<Todo>,TodoList> = Persistent::new(vec![]);
     server.chain.link(todolist);
 
-    let mut router = router::Router::new();
+    let mut router = Router::new();
     router.options("/", FromFn::new(empty_success));
     router.get("/", FromFn::new(list_todos));
     router.post("/", FromFn::new(create_todo));
     router.delete("/", FromFn::new(delete_todos));
+    router.options("/:todoid", FromFn::new(empty_success));
+    router.get("/:todoid", FromFn::new(get_todo));
 
     server.chain.link(router);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
