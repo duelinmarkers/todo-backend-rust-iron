@@ -131,7 +131,7 @@ fn update_todo(req: &mut Request, res: &mut Response) -> Status {
     let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
     let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
     let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
-    let mut todo = todos.get_mut(idx);
+    let todo = todos.get_mut(idx);
     match json::from_str(req.body.as_slice()) {
         Ok(json) => {
             match json.find(&"title".to_string()) {
