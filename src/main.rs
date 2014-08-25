@@ -109,19 +109,11 @@ fn create_todo(req: &mut Request, res: &mut Response) -> Status {
     content_type_json(res);
     match fresh_todo(req.body.as_slice()) {
         Ok(todo) => {
-            match req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>() {
-                Some(lock) => {
-                    let mut todos = lock.write();
-                    (*todos).push(todo.clone());
-                    let _ = res.serve(::http::status::Ok, json::encode(&todo));
-                },
-                None => println!("Got no persistent")
-            }
+            let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+            (*todos).push(todo.clone());
+            let _ = res.serve(::http::status::Ok, json::encode(&todo));
         }
-        Err(s) => {
-            // TODO respond 4xx
-            println!("{}", s)
-        }
+        Err(s) => { let _ = res.serve(::http::status::BadRequest, s); }
     }
     Unwind
 }
