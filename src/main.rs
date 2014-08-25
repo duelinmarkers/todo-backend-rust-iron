@@ -109,12 +109,25 @@ fn fresh_todo(s: &str) -> Result<Todo, String> {
 }
 
 #[test]
-fn test_parse_complete_todo() {
-    assert_eq!("a todo".to_string(), fresh_todo("{\"title\": \"a todo\", \"order\":100}").unwrap().title);
+fn parses_todo_with_order() {
+    let todo = fresh_todo("{\"title\": \"a todo\", \"order\":100}").unwrap();
+    assert_eq!("a todo".to_string(), todo.title);
+    assert_eq!(100f64, todo.order.unwrap());
 }
 #[test]
-fn test_parse_incomplete_todo() {
-    assert_eq!("a todo".to_string(), fresh_todo("{\"title\": \"a todo\"}").unwrap().title);
+fn parses_todo_with_only_title() {
+    let todo = fresh_todo("{\"title\": \"a todo\"}").unwrap();
+    assert_eq!("a todo".to_string(), todo.title);
+    assert_eq!(None, todo.order);
+}
+#[test]
+fn errs_with_details_on_missing_title() {
+    assert_eq!("title is required".to_string(), fresh_todo("{}").err().unwrap());
+}
+#[test]
+fn errs_with_details_on_malformed_json() {
+    assert_eq!("Failed to parse JSON: SyntaxError(EOF While parsing value, 1, 10)".to_string(),
+        fresh_todo("{\"title\":").err().unwrap());
 }
 
 fn create_todo(req: &mut Request, res: &mut Response) -> Status {
@@ -158,7 +171,6 @@ fn update_todo(req: &mut Request, res: &mut Response) -> Status {
         }
     }
     Unwind
-
 }
 
 fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
@@ -186,10 +198,12 @@ fn main() {
     server.chain.link(todolist);
 
     let mut router = Router::new();
+
     router.options("/", FromFn::new(empty_success));
     router.get("/", FromFn::new(list_todos));
     router.post("/", FromFn::new(create_todo));
     router.delete("/", FromFn::new(delete_todos));
+
     router.options("/:todoid", FromFn::new(empty_success));
     router.get("/:todoid", FromFn::new(get_todo));
     router.patch("/:todoid", FromFn::new(update_todo));
