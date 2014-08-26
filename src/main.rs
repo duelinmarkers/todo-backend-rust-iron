@@ -7,13 +7,9 @@ extern crate persistent;
 extern crate typemap;
 extern crate serialize;
 
-use std::io::net::ip::Ipv4Addr;
-use http::method::Options;
-use http::headers::content_type::MediaType;
 use iron::{Iron, Chain, Request, Response, Server, Status, Continue, Unwind, FromFn};
 use persistent::Persistent;
 use router::{Router, Params};
-use typemap::Assoc;
 use std::sync::{Arc, RWLock};
 use serialize::json;
 use uuid::Uuid;
@@ -22,11 +18,11 @@ use todos::Todo;
 mod todos;
 
 struct TodoList; // "Phantom" type for iron/persistent.
-impl Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
+impl ::typemap::Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
 
 fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
     let _ = res.headers.insert_raw("access-control-allow-origin".to_string(), b"*");
-    if req.method == Options {
+    if req.method == ::http::method::Options {
         let _ = res.headers.insert_raw("access-control-allow-headers".to_string(), b"accept, content-type");
         let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,POST,DELETE,OPTIONS,PATCH");
     }
@@ -39,7 +35,7 @@ fn empty_success(_req: &mut Request, res: &mut Response) -> Status {
 }
 
 fn content_type_json(res: &mut Response) {
-    res.headers.content_type = Some(MediaType {
+    res.headers.content_type = Some(::http::headers::content_type::MediaType {
         type_: "application".to_string(),
         subtype: "json".to_string(),
         parameters: vec![]
@@ -131,5 +127,5 @@ fn main() {
     router.delete("/:todoid", FromFn::new(delete_todo));
 
     server.chain.link(router);
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
