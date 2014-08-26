@@ -62,7 +62,8 @@ fn get_todo(req: &mut Request, res: &mut Response) -> Status {
 
 fn create_todo(req: &mut Request, res: &mut Response) -> Status {
     content_type_json(res);
-    match Todo::new_from_json_str(req.body.as_slice()) {
+    match Todo::new_from_json_str(req.body.as_slice(),
+                                  format!("{}", req.url).as_slice()) {
         Ok(todo) => {
             let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
             (*todos).push(todo.clone());

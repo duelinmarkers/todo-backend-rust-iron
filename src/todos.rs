@@ -11,7 +11,7 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub fn new_from_json_str(unparsed_json: &str) -> Result<Todo, String> {
+    pub fn new_from_json_str(unparsed_json: &str, url_base: &str) -> Result<Todo, String> {
         match valid_fresh_todo_json(unparsed_json) {
             Ok(json) => {
                 let id = Uuid::new_v4();
@@ -20,7 +20,7 @@ impl Todo {
                     order: json.find(&"order".to_string()).and_then(|j| j.as_f64()),
                     completed: false,
                     id: id,
-                    url: format!("http://localhost:3000/{}", id)
+                    url: format!("{}{}", url_base, id)
                 })
             },
             Err(msg) => Err(msg)
@@ -80,26 +80,26 @@ mod Todo_new_from_json {
 
     #[test]
     fn parses_todo_with_order() {
-        let todo = Todo::new_from_json_str("{\"title\": \"a todo\", \"order\":100}").unwrap();
+        let todo = Todo::new_from_json_str("{\"title\": \"a todo\", \"order\":100}", "http://example.com/").unwrap();
         assert_eq!("a todo".to_string(), todo.title);
         assert_eq!(100f64, todo.order.unwrap());
     }
 
     #[test]
     fn parses_todo_with_only_title() {
-        let todo = Todo::new_from_json_str("{\"title\": \"a todo\"}").unwrap();
+        let todo = Todo::new_from_json_str("{\"title\": \"a todo\"}", "http://example.com/").unwrap();
         assert_eq!("a todo".to_string(), todo.title);
         assert_eq!(None, todo.order);
     }
 
     #[test]
     fn errs_with_details_on_missing_title() {
-        assert_eq!("title is required".to_string(), Todo::new_from_json_str("{}").err().unwrap());
+        assert_eq!("title is required".to_string(), Todo::new_from_json_str("{}", "http://example.com/").err().unwrap());
     }
 
     #[test]
     fn errs_with_details_on_malformed_json() {
         assert_eq!("Failed to parse JSON: SyntaxError(EOF While parsing value, 1, 10)".to_string(),
-                   Todo::new_from_json_str("{\"title\":").err().unwrap());
+                   Todo::new_from_json_str("{\"title\":", "http://example.com/").err().unwrap());
     }
 }
