@@ -17,15 +17,9 @@ use typemap::Assoc;
 use std::sync::{Arc, RWLock};
 use serialize::json;
 use uuid::Uuid;
+use todos::Todo;
 
-#[deriving(Show, Clone, Encodable)]
-struct Todo {
-    title: String,
-    order: Option<f64>,
-    completed: bool,
-    id: Uuid,
-    url: String // url::Url is not encodable
-}
+mod todos;
 
 struct TodoList; // "Phantom" type for iron/persistent.
 impl Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
@@ -70,70 +64,9 @@ fn get_todo(req: &mut Request, res: &mut Response) -> Status {
     Unwind
 }
 
-fn valid_fresh_todo_json(s: &str) -> Result<json::Json, String> {
-    match json::from_str(s) {
-        Ok(json) => {
-            match json.find(&"title".to_string()) {
-                Some(title) => if !title.is_string() {
-                    return Err("title must be a string".to_string())
-                },
-                None => return Err("title is required".to_string())
-            }
-            match json.find(&"order".to_string()) {
-                Some(order) => if order.is_number() {
-                    Ok(json.clone())
-                } else {
-                    Err("order must be a number".to_string())
-                },
-                None => Ok(json.clone())
-            }
-        },
-        Err(builder_error) => Err(format!("Failed to parse JSON: {}", builder_error))
-    }
-}
-
-fn fresh_todo(s: &str) -> Result<Todo, String> {
-    match valid_fresh_todo_json(s) {
-        Ok(json) => {
-            let id = Uuid::new_v4();
-            Ok(Todo {
-                title: json.find(&"title".to_string()).unwrap().as_string().unwrap().to_string(),
-                order: json.find(&"order".to_string()).and_then(|j| j.as_f64()),
-                completed: false,
-                id: id,
-                url: format!("http://localhost:3000/{}", id)
-            })
-        },
-        Err(msg) => Err(msg)
-    }
-}
-
-#[test]
-fn parses_todo_with_order() {
-    let todo = fresh_todo("{\"title\": \"a todo\", \"order\":100}").unwrap();
-    assert_eq!("a todo".to_string(), todo.title);
-    assert_eq!(100f64, todo.order.unwrap());
-}
-#[test]
-fn parses_todo_with_only_title() {
-    let todo = fresh_todo("{\"title\": \"a todo\"}").unwrap();
-    assert_eq!("a todo".to_string(), todo.title);
-    assert_eq!(None, todo.order);
-}
-#[test]
-fn errs_with_details_on_missing_title() {
-    assert_eq!("title is required".to_string(), fresh_todo("{}").err().unwrap());
-}
-#[test]
-fn errs_with_details_on_malformed_json() {
-    assert_eq!("Failed to parse JSON: SyntaxError(EOF While parsing value, 1, 10)".to_string(),
-        fresh_todo("{\"title\":").err().unwrap());
-}
-
 fn create_todo(req: &mut Request, res: &mut Response) -> Status {
-    println!("body: {}", req.body);
     content_type_json(res);
-    match fresh_todo(req.body.as_slice()) {
+    match Todo::new_from_json_str(req.body.as_slice()) {
         Ok(todo) => {
             let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
             (*todos).push(todo.clone());
@@ -150,24 +83,12 @@ fn update_todo(req: &mut Request, res: &mut Response) -> Status {
     let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
     let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
     let todo = todos.get_mut(idx);
-    match json::from_str(req.body.as_slice()) {
-        Ok(json) => {
-            match json.find(&"title".to_string()) {
-                Some(title) => todo.title = title.as_string().unwrap().to_string(),
-                None => {}
-            }
-            match json.find(&"completed".to_string()) {
-                Some(c) => todo.completed = c.as_boolean().unwrap(),
-                None => {}
-            }
-            match json.find(&"order".to_string()) {
-                Some(o) => todo.order = o.as_f64(),
-                None => {}
-            }
+    match todo.update_from_json_str(req.body.as_slice()) {
+        Ok(_) => {
             let _ = res.serve(::http::status::Ok, json::encode(todo));
         }
-        Err(builder_error) => {
-            let _ = res.serve(::http::status::BadRequest, format!("Failed to parse JSON: {}", builder_error));
+        Err(msg) => {
+            let _ = res.serve(::http::status::BadRequest, msg);
         }
     }
     Unwind
