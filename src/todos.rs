@@ -94,7 +94,8 @@ mod Todo_new_from_json {
 
     #[test]
     fn errs_with_details_on_missing_title() {
-        assert_eq!("title is required".to_string(), Todo::new_from_json_str("{}", "http://example.com/").err().unwrap());
+        assert_eq!("title is required".to_string(),
+                   Todo::new_from_json_str("{}", "http://example.com/").err().unwrap());
     }
 
     #[test]
