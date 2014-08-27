@@ -20,26 +20,34 @@ mod todos;
 struct TodoList; // "Phantom" type for iron/persistent.
 impl ::typemap::Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
 
-fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
-    let _ = res.headers.insert_raw("access-control-allow-origin".to_string(), b"*");
-    if req.method == ::http::method::Options {
-        let _ = res.headers.insert_raw("access-control-allow-headers".to_string(), b"accept, content-type");
-        let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,POST,DELETE,OPTIONS,PATCH");
-    }
-    Continue
+fn main() {
+    let mut server: Server = Iron::new();
+
+    server.chain.link(logger::Logger::new(None));
+    server.chain.link(FromFn::new(set_cors_headers));
+
+    let todolist : Persistent<Vec<Todo>,TodoList> = Persistent::new(vec![]);
+    server.chain.link(todolist);
+
+    let mut router = Router::new();
+
+    router.options("/", FromFn::new(empty_success));
+    router.get("/", FromFn::new(list_todos));
+    router.post("/", FromFn::new(create_todo));
+    router.delete("/", FromFn::new(delete_todos));
+
+    router.options("/:todoid", FromFn::new(empty_success));
+    router.get("/:todoid", FromFn::new(get_todo));
+    router.patch("/:todoid", FromFn::new(update_todo));
+    router.delete("/:todoid", FromFn::new(delete_todo));
+
+    server.chain.link(router);
+    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
 fn empty_success(_req: &mut Request, res: &mut Response) -> Status {
     let _ = res.serve(::http::status::Ok, "");
     Unwind
-}
-
-fn content_type_json(res: &mut Response) {
-    res.headers.content_type = Some(::http::headers::content_type::MediaType {
-        type_: "application".to_string(),
-        subtype: "json".to_string(),
-        parameters: vec![]
-    });
 }
 
 fn list_todos(req: &mut Request, res: &mut Response) -> Status {
@@ -106,27 +114,19 @@ fn delete_todo(req: &mut Request, res: &mut Response) -> Status {
     Unwind
 }
 
-fn main() {
-    let mut server: Server = Iron::new();
+fn content_type_json(res: &mut Response) {
+    res.headers.content_type = Some(::http::headers::content_type::MediaType {
+        type_: "application".to_string(),
+        subtype: "json".to_string(),
+        parameters: vec![]
+    });
+}
 
-    server.chain.link(logger::Logger::new(None));
-    server.chain.link(FromFn::new(set_cors_headers));
-
-    let todolist : Persistent<Vec<Todo>,TodoList> = Persistent::new(vec![]);
-    server.chain.link(todolist);
-
-    let mut router = Router::new();
-
-    router.options("/", FromFn::new(empty_success));
-    router.get("/", FromFn::new(list_todos));
-    router.post("/", FromFn::new(create_todo));
-    router.delete("/", FromFn::new(delete_todos));
-
-    router.options("/:todoid", FromFn::new(empty_success));
-    router.get("/:todoid", FromFn::new(get_todo));
-    router.patch("/:todoid", FromFn::new(update_todo));
-    router.delete("/:todoid", FromFn::new(delete_todo));
-
-    server.chain.link(router);
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
+fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
+    let _ = res.headers.insert_raw("access-control-allow-origin".to_string(), b"*");
+    if req.method == ::http::method::Options {
+        let _ = res.headers.insert_raw("access-control-allow-headers".to_string(), b"accept, content-type");
+        let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,POST,DELETE,OPTIONS,PATCH");
+    }
+    Continue
 }
