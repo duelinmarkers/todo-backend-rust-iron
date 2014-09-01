@@ -7,10 +7,9 @@ extern crate persistent;
 extern crate typemap;
 extern crate serialize;
 
-use iron::{Iron, Chain, Request, Response, Server, Status, Continue, Unwind, FromFn};
-use persistent::Persistent;
+use iron::{AfterMiddleware, Chain, ChainBuilder, Iron, IronResult, Plugin, Request, Response};
+use persistent::State;
 use router::{Router, Params};
-use std::sync::{Arc, RWLock};
 use serialize::json;
 use uuid::Uuid;
 use todos::Todo;
@@ -18,115 +17,114 @@ use todos::Todo;
 mod todos;
 
 struct TodoList; // "Phantom" type for iron/persistent.
-impl ::typemap::Assoc<Arc<RWLock<Vec<Todo>>>> for TodoList {}
+impl ::typemap::Assoc<Vec<Todo>> for TodoList {}
 
 fn main() {
-    let mut server: Server = Iron::new();
-
-    server.chain.link(logger::Logger::new(None));
-    server.chain.link(FromFn::new(set_cors_headers));
-
-    let todolist : Persistent<Vec<Todo>,TodoList> = Persistent::new(vec![]);
-    server.chain.link(todolist);
-
     let mut router = Router::new();
+    router
+        .options("/", empty_success)
+        .get("/", list_todos)
+        .post("/", create_todo)
+        .delete("/", delete_todos)
+        .options("/:todoid", empty_success)
+        .get("/:todoid", get_todo)
+        .patch("/:todoid", update_todo)
+        .delete("/:todoid", delete_todo);
 
-    router.options("/", FromFn::new(empty_success));
-    router.get("/", FromFn::new(list_todos));
-    router.post("/", FromFn::new(create_todo));
-    router.delete("/", FromFn::new(delete_todos));
+    let mut chain = ChainBuilder::new(router);
+    chain.link(logger::Logger::middlewares(None));
+    chain.link_before(State::<TodoList,Vec<Todo>>::one(vec![]));
+    chain.link_after(After { f:set_cors_headers });
+    chain.link_after(After { f:content_type_json });
 
-    router.options("/:todoid", FromFn::new(empty_success));
-    router.get("/:todoid", FromFn::new(get_todo));
-    router.patch("/:todoid", FromFn::new(update_todo));
-    router.delete("/:todoid", FromFn::new(delete_todo));
-
-    server.chain.link(router);
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(chain).listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn empty_success(_req: &mut Request, res: &mut Response) -> Status {
-    let _ = res.serve(::http::status::Ok, "");
-    Unwind
+fn empty_success(_: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(iron::status::Ok, ""))
 }
 
-fn list_todos(req: &mut Request, res: &mut Response) -> Status {
-    content_type_json(res);
-    let todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
-    let _ = res.serve(::http::status::Ok, json::encode(&*todos));
-    Unwind
+fn list_todos(req: &mut Request) -> IronResult<Response> {
+    let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+    let todos = rwlock.read();
+    Ok(Response::with(::iron::status::Ok, json::encode(&*todos)))
 }
 
-fn get_todo(req: &mut Request, res: &mut Response) -> Status {
-    content_type_json(res);
+fn get_todo(req: &mut Request) -> IronResult<Response> {
     let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
-    let todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().read();
+    let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+    let todos = rwlock.read();
     match todos.iter().find(|todo| todo.id == todoid) {
-        Some(todo) => { let _ = res.serve(::http::status::Ok, json::encode(todo)); },
-        None => { let _ = res.serve(::http::status::NotFound, ""); }
+        Some(todo) => Ok(Response::with(::iron::status::Ok, json::encode(todo))),
+        None => Ok(Response::with(::iron::status::NotFound, ""))
     }
-    Unwind
 }
 
-fn create_todo(req: &mut Request, res: &mut Response) -> Status {
-    content_type_json(res);
+fn create_todo(req: &mut Request) -> IronResult<Response> {
     match Todo::new_from_json_str(req.body.as_slice(),
                                   format!("{}", req.url).as_slice()) {
         Ok(todo) => {
-            let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+            let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+            let mut todos = rwlock.write();
             (*todos).push(todo.clone());
-            let _ = res.serve(::http::status::Ok, json::encode(&todo));
-        }
-        Err(s) => { let _ = res.serve(::http::status::BadRequest, s); }
+            Ok(Response::with(::iron::status::Ok, json::encode(&todo)))
+        },
+        Err(s) => Ok(Response::with(::iron::status::BadRequest, s))
     }
-    Unwind
 }
 
-fn update_todo(req: &mut Request, res: &mut Response) -> Status {
-    content_type_json(res);
+fn update_todo(req: &mut Request) -> IronResult<Response> {
     let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
-    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+    let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+    let mut todos = rwlock.write();
     let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
     let todo = todos.get_mut(idx);
     match todo.update_from_json_str(req.body.as_slice()) {
-        Ok(_) => {
-            let _ = res.serve(::http::status::Ok, json::encode(todo));
-        }
-        Err(msg) => {
-            let _ = res.serve(::http::status::BadRequest, msg);
-        }
+        Ok(_) => Ok(Response::with(::iron::status::Ok, json::encode(todo))),
+        Err(msg) => Ok(Response::with(::iron::status::BadRequest, msg))
     }
-    Unwind
 }
 
-fn delete_todos(req: &mut Request, res: &mut Response) -> Status {
-    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+fn delete_todos(req: &mut Request) -> IronResult<Response> {
+    let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+    let mut todos = rwlock.write();
     todos.clear();
-    let _ = res.serve(::http::status::Ok, "");
-    Unwind
+    Ok(Response::with(::iron::status::Ok, ""))
 }
 
-fn delete_todo(req: &mut Request, res: &mut Response) -> Status {
+fn delete_todo(req: &mut Request) -> IronResult<Response> {
     let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
-    let mut todos = req.extensions.find::<TodoList, Arc<RWLock<Vec<Todo>>>>().unwrap().write();
+    let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
+    let mut todos = rwlock.write();
     todos.retain(|todo| todo.id != todoid);
-    let _ = res.serve(::http::status::Ok, "");
-    Unwind
+    Ok(Response::with(::iron::status::Ok, ""))
 }
 
-fn content_type_json(res: &mut Response) {
+fn content_type_json(_: &mut Request, res: &mut Response) -> IronResult<()> {
     res.headers.content_type = Some(::http::headers::content_type::MediaType {
         type_: "application".to_string(),
         subtype: "json".to_string(),
         parameters: vec![]
     });
+    Ok(())
 }
 
-fn set_cors_headers(req: &mut Request, res: &mut Response) -> Status {
+fn set_cors_headers(req: &mut Request, res: &mut Response) -> IronResult<()> {
     let _ = res.headers.insert_raw("access-control-allow-origin".to_string(), b"*");
     if req.method == ::http::method::Options {
         let _ = res.headers.insert_raw("access-control-allow-headers".to_string(), b"accept, content-type");
         let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,POST,DELETE,OPTIONS,PATCH");
     }
-    Continue
+    Ok(())
+}
+
+struct After {
+    f: fn(&mut Request, &mut Response) -> IronResult<()>
+}
+
+impl AfterMiddleware for After {
+    fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+        let f = self.f;
+        f(req, res)
+    }
 }

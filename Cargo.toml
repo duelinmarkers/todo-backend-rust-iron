@@ -7,37 +7,18 @@ authors = ["John Hume <duelin.markers@gmail.com>"]
 [dependencies.iron]
 git = "https://github.com/iron/iron.git"
 
-# [dependencies.urlencoded]
-# git = "https://github.com/iron/urlencoded.git"
-
 [dependencies.logger]
-git = "https://github.com/iron/logger.git"
+git = "https://github.com/duelinmarkers/logger.git"
+rev = "bug/work-with-new-iron-api"
 
 [dependencies.router]
-git = "https://github.com/duelinmarkers/router.git"
-rev = "work-with-typemap-req-extensions"
-
-# [dependencies.mount]
-# git = "https://github.com/iron/mount.git"
+git = "https://github.com/iron/router.git"
 
 [dependencies.persistent]
-git = "https://github.com/duelinmarkers/persistent.git"
-rev = "work-with-typemap"
-
-# [dependencies.url]
-# git = "https://github.com/servo/rust-url.git"
+git = "https://github.com/iron/persistent.git"
 
 [dependencies.uuid]
 git = "https://github.com/rust-lang/uuid.git"
-
-# [dependencies.staticfile]
-# git = "https://github.com/iron/static-file.git"
-
-# [dependencies.session]
-# git = "https://github.com/iron/session.git"
-
-# [dependencies.cookie]
-# git = "https://github.com/iron/cookie.git"
 
 # [dependencies.bodyparser]
 # git = "https://github.com/iron/body-parser.git"
