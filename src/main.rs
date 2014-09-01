@@ -40,6 +40,7 @@ fn main() {
     chain.link_after(logger_after);
 
     Iron::new(chain).listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
+    println!("Iron listening on http://localhost:3000/");
 }
 
 fn empty_success(_: &mut Request) -> IronResult<Response> {
