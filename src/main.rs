@@ -7,7 +7,7 @@ extern crate persistent;
 extern crate typemap;
 extern crate serialize;
 
-use iron::{AfterMiddleware, Chain, ChainBuilder, Iron, IronResult, Plugin, Request, Response};
+use iron::{Chain, ChainBuilder, Iron, IronResult, Plugin, Request, Response};
 use persistent::State;
 use router::{Router, Params};
 use serialize::json;
@@ -35,8 +35,8 @@ fn main() {
     let (logger_before, logger_after) = logger::Logger::new(None);
     chain.link_before(logger_before);
     chain.link_before(State::<TodoList,Vec<Todo>>::one(vec![]));
-    chain.link_after(After { f:set_cors_headers });
-    chain.link_after(After { f:content_type_json });
+    chain.link_after(set_cors_headers);
+    chain.link_after(content_type_json);
     chain.link_after(logger_after);
 
     Iron::new(chain).listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
@@ -119,15 +119,4 @@ fn set_cors_headers(req: &mut Request, res: &mut Response) -> IronResult<()> {
         let _ = res.headers.insert_raw("access-control-allow-methods".to_string(), b"GET,POST,DELETE,OPTIONS,PATCH");
     }
     Ok(())
-}
-
-struct After {
-    f: fn(&mut Request, &mut Response) -> IronResult<()>
-}
-
-impl AfterMiddleware for After {
-    fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
-        let f = self.f;
-        f(req, res)
-    }
 }
