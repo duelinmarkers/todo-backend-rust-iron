@@ -1,5 +1,7 @@
 # todo-backend-rust-iron
 
+[![Build Status](https://travis-ci.org/duelinmarkers/todo-backend-rust-iron.svg?branch=master)](https://travis-ci.org/duelinmarkers/todo-backend-rust-iron)
+
 See http://todo-backend.thepete.net/ for *what-is-this-thing?*.
 
 This is the first Rust I've written other than the Hello-Worldly stuff in the
