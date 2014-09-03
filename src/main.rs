@@ -32,7 +32,7 @@ fn main() {
         .delete("/:todoid", delete_todo);
 
     let mut chain = ChainBuilder::new(router);
-    let (logger_before, logger_after) = logger::Logger::middlewares(None);
+    let (logger_before, logger_after) = logger::Logger::new(None);
     chain.link_before(logger_before);
     chain.link_before(State::<TodoList,Vec<Todo>>::one(vec![]));
     chain.link_after(After { f:set_cors_headers });
