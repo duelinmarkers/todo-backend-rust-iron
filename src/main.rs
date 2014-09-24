@@ -54,7 +54,7 @@ fn list_todos(req: &mut Request) -> IronResult<Response> {
 }
 
 fn get_todo(req: &mut Request) -> IronResult<Response> {
-    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let todoid = Uuid::parse_str(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
     let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
     let todos = rwlock.read();
     match todos.iter().find(|todo| todo.id == todoid) {
@@ -77,7 +77,7 @@ fn create_todo(req: &mut Request) -> IronResult<Response> {
 }
 
 fn update_todo(req: &mut Request) -> IronResult<Response> {
-    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let todoid = Uuid::parse_str(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
     let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
     let mut todos = rwlock.write();
     let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
@@ -96,7 +96,7 @@ fn delete_todos(req: &mut Request) -> IronResult<Response> {
 }
 
 fn delete_todo(req: &mut Request) -> IronResult<Response> {
-    let todoid = Uuid::parse_string(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
+    let todoid = Uuid::parse_str(req.extensions.find::<Router, Params>().unwrap()["todoid"].as_slice()).unwrap();
     let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
     let mut todos = rwlock.write();
     todos.retain(|todo| todo.id != todoid);
