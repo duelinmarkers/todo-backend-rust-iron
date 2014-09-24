@@ -4,7 +4,7 @@ version = "0.0.1"
 dependencies = [
  "iron 0.0.1 (git+https://github.com/iron/iron.git#f621c3eecf09776b262e460bfe6340d6eab32a85)",
  "logger 0.1.0 (git+https://github.com/duelinmarkers/logger.git?ref=bug/work-with-new-iron-api#e941a7888a3f0c2fc86e4c8b561c3672c8ab27c7)",
- "persistent 0.1.0 (git+https://github.com/iron/persistent.git#c8e75f5bb3cd858bf25bed2b8d1c7b927ec782fe)",
+ "persistent 0.1.0 (git+https://github.com/iron/persistent.git#d35942cacdce03c54d98d49ba205029e52ae2714)",
  "router 0.1.0 (git+https://github.com/iron/router.git#b5f04e9b25e93bb99979d57252ffa3599c4f1c4d)",
  "uuid 0.0.1 (git+https://github.com/rust-lang/uuid.git#c3041068f413a5e46d795d21a346072794593839)",
 ]
@@ -12,8 +12,9 @@ dependencies = [
 [[package]]
 name = "content_type"
 version = "0.1.0"
-source = "git+https://github.com/reem/rust-http-content-type.git#635e92b75e0f3f84a181bce37dbd2f22cfa8d730"
+source = "git+https://github.com/reem/rust-http-content-type.git#f28ce6bba876f087130be192820a446ef6d69460"
 dependencies = [
+ "generator 0.1.0 (git+https://github.com/reem/rust-http-content-type.git#f28ce6bba876f087130be192820a446ef6d69460)",
  "http 0.1.0-pre (git+https://github.com/chris-morgan/rust-http.git#fbec7cb3ea00e2685fd1dcf4ce1f7488c7c58704)",
 ]
 
@@ -31,6 +32,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "generator"
+version = "0.1.0"
+source = "git+https://github.com/reem/rust-http-content-type.git#f28ce6bba876f087130be192820a446ef6d69460"
+dependencies = [
+ "http 0.1.0-pre (git+https://github.com/chris-morgan/rust-http.git#fbec7cb3ea00e2685fd1dcf4ce1f7488c7c58704)",
+ "url 0.1.0 (git+https://github.com/servo/rust-url#29f70a47230c2aa736e263977247c786e0b2c243)",
+]
+
+[[package]]
 name = "http"
 version = "0.1.0-pre"
 source = "git+https://github.com/chris-morgan/rust-http.git#fbec7cb3ea00e2685fd1dcf4ce1f7488c7c58704"
@@ -44,7 +54,7 @@ name = "iron"
 version = "0.0.1"
 source = "git+https://github.com/iron/iron.git#f621c3eecf09776b262e460bfe6340d6eab32a85"
 dependencies = [
- "content_type 0.1.0 (git+https://github.com/reem/rust-http-content-type.git#635e92b75e0f3f84a181bce37dbd2f22cfa8d730)",
+ "content_type 0.1.0 (git+https://github.com/reem/rust-http-content-type.git#f28ce6bba876f087130be192820a446ef6d69460)",
  "error 0.0.0 (git+https://github.com/reem/rust-error.git#5aaaa164be03f324edd8c7b6b31ce3e507a582d5)",
  "http 0.1.0-pre (git+https://github.com/chris-morgan/rust-http.git#fbec7cb3ea00e2685fd1dcf4ce1f7488c7c58704)",
  "plugin 0.0.0 (git+https://github.com/reem/rust-plugin.git#19b97b79ed3fb291cd6d454058c906e33017a0b6)",
@@ -70,7 +80,7 @@ source = "git+https://github.com/sfackler/rust-openssl.git#f3786e3e006ba5c15701d
 [[package]]
 name = "persistent"
 version = "0.1.0"
-source = "git+https://github.com/iron/persistent.git#c8e75f5bb3cd858bf25bed2b8d1c7b927ec782fe"
+source = "git+https://github.com/iron/persistent.git#d35942cacdce03c54d98d49ba205029e52ae2714"
 dependencies = [
  "iron 0.0.1 (git+https://github.com/iron/iron.git#f621c3eecf09776b262e460bfe6340d6eab32a85)",
  "plugin 0.0.0 (git+https://github.com/reem/rust-plugin.git#19b97b79ed3fb291cd6d454058c906e33017a0b6)",
