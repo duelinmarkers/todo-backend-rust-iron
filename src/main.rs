@@ -81,7 +81,7 @@ fn update_todo(req: &mut Request) -> IronResult<Response> {
     let rwlock = req.get::<State<TodoList,Vec<Todo>>>().unwrap();
     let mut todos = rwlock.write();
     let idx = todos.iter().position(|todo| todo.id == todoid).unwrap();
-    let todo = todos.get_mut(idx);
+    let todo = todos.deref_mut().get_mut(idx);
     match todo.update_from_json_str(req.body.as_slice()) {
         Ok(_) => Ok(Response::with(::iron::status::Ok, json::encode(todo))),
         Err(msg) => Ok(Response::with(::iron::status::BadRequest, msg))
